@@ -107,7 +107,10 @@ public class WaterfallLayout: UICollectionViewLayout {
     private lazy var cachedItemSizes = [IndexPath: CGSize]()
 
     public weak var delegate: WaterfallLayoutDelegate?
-
+    
+    // If the Item size is zero, then interItemSpacing should not apply
+    public var shouldApplyIndexWiseInterItemSpacing: Bool = false
+    
     public override func prepare() {
         super.prepare()
         cleaunup()
@@ -165,7 +168,7 @@ public class WaterfallLayout: UICollectionViewLayout {
     override public func invalidationContext(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutInvalidationContext {
         let context = super.invalidationContext(forPreferredLayoutAttributes: preferredAttributes, withOriginalAttributes: originalAttributes)
 
-        guard let collectionView = collectionView else { return context }
+        guard collectionView != nil else { return context }
 
         let oldContentSize = self.collectionViewContentSize
         cachedItemSizes[originalAttributes.indexPath] = preferredAttributes.size
@@ -201,7 +204,7 @@ public class WaterfallLayout: UICollectionViewLayout {
         position += headerInset.top
 
         if headerHeight > 0 {
-            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, with: [section, 0])
+            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, with: [section, 0])
             attributes.frame = CGRect(
                 x: headerInset.left,
                 y: position,
@@ -290,7 +293,11 @@ public class WaterfallLayout: UICollectionViewLayout {
                 height: itemHeight
             )
             itemAttributes.append(attributes)
-            columnHeights[section][columnIndex] = attributes.frame.maxY + minimumInteritemSpacing
+            if shouldApplyIndexWiseInterItemSpacing, itemSize.height == 0 {
+                columnHeights[section][columnIndex] = attributes.frame.maxY
+            } else {
+                columnHeights[section][columnIndex] = attributes.frame.maxY + minimumInteritemSpacing
+            }
 
             if case .flow = layout, index % columnCount == columnCount - 1 {
                 let maxHeight = columnHeights[section].enumerated().sorted { $0.element > $1.element }.first?.element ?? 0.0
@@ -317,7 +324,7 @@ public class WaterfallLayout: UICollectionViewLayout {
         position += footerInset.top
 
         if footerHeight > 0.0 {
-            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionElementKindSectionFooter, with: [section, 0])
+            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, with: [section, 0])
             attributes.frame = CGRect(x: footerInset.left, y: position, width: collectionView.bounds.width - (footerInset.left + footerInset.right), height: footerHeight)
             footersAttribute[section] = attributes
             allItemAttributes.append(attributes)
