@@ -250,7 +250,7 @@ public class WaterfallLayout: UICollectionViewLayout {
 
     private func layoutItems(position: CGFloat, collectionView: UICollectionView, delegate: WaterfallLayoutDelegate, section: Int) {
         let sectionInset = self.sectionInset(for: section)
-        let minimumInteritemSpacing = self.minimumInteritemSpacing(for: section)
+        var minimumInteritemSpacing = self.minimumInteritemSpacing(for: section)
         let minimumLineSpacing = self.minimumInteritemSpacing(for: section)
 
         let columnCount = delegate.collectionViewLayout(for: section).column
@@ -293,11 +293,12 @@ public class WaterfallLayout: UICollectionViewLayout {
                 height: itemHeight
             )
             itemAttributes.append(attributes)
-            if shouldApplyIndexWiseInterItemSpacing, itemSize.height == 0 {
-                columnHeights[section][columnIndex] = attributes.frame.maxY
-            } else {
-                columnHeights[section][columnIndex] = attributes.frame.maxY + minimumInteritemSpacing
+
+            if shouldApplyIndexWiseInterItemSpacing, itemSize.height <= 0 {
+                minimumInteritemSpacing = 0.0
             }
+
+            columnHeights[section][columnIndex] = attributes.frame.maxY + minimumInteritemSpacing
 
             if case .flow = layout, index % columnCount == columnCount - 1 {
                 let maxHeight = columnHeights[section].enumerated().sorted { $0.element > $1.element }.first?.element ?? 0.0
