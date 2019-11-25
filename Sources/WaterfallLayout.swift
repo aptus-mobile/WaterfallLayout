@@ -107,7 +107,10 @@ public class WaterfallLayout: UICollectionViewLayout {
     private lazy var cachedItemSizes = [IndexPath: CGSize]()
 
     public weak var delegate: WaterfallLayoutDelegate?
-
+    
+    // If the Item size is zero, then InteritemSpacing should not apply
+    public var ignoreInteritemSpacingForItemWithZeroHeight: Bool = false
+    
     public override func prepare() {
         super.prepare()
         cleaunup()
@@ -165,7 +168,7 @@ public class WaterfallLayout: UICollectionViewLayout {
     override public func invalidationContext(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutInvalidationContext {
         let context = super.invalidationContext(forPreferredLayoutAttributes: preferredAttributes, withOriginalAttributes: originalAttributes)
 
-        guard let collectionView = collectionView else { return context }
+        guard collectionView != nil else { return context }
 
         let oldContentSize = self.collectionViewContentSize
         cachedItemSizes[originalAttributes.indexPath] = preferredAttributes.size
@@ -201,7 +204,7 @@ public class WaterfallLayout: UICollectionViewLayout {
         position += headerInset.top
 
         if headerHeight > 0 {
-            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionElementKindSectionHeader, with: [section, 0])
+            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, with: [section, 0])
             attributes.frame = CGRect(
                 x: headerInset.left,
                 y: position,
@@ -247,7 +250,7 @@ public class WaterfallLayout: UICollectionViewLayout {
 
     private func layoutItems(position: CGFloat, collectionView: UICollectionView, delegate: WaterfallLayoutDelegate, section: Int) {
         let sectionInset = self.sectionInset(for: section)
-        let minimumInteritemSpacing = self.minimumInteritemSpacing(for: section)
+        var minimumInteritemSpacing = self.minimumInteritemSpacing(for: section)
         let minimumLineSpacing = self.minimumInteritemSpacing(for: section)
 
         let columnCount = delegate.collectionViewLayout(for: section).column
@@ -290,6 +293,11 @@ public class WaterfallLayout: UICollectionViewLayout {
                 height: itemHeight
             )
             itemAttributes.append(attributes)
+
+            if ignoreInteritemSpacingForItemWithZeroHeight, itemSize.height <= 0 {
+                minimumInteritemSpacing = 0.0
+            }
+
             columnHeights[section][columnIndex] = attributes.frame.maxY + minimumInteritemSpacing
 
             if case .flow = layout, index % columnCount == columnCount - 1 {
@@ -317,7 +325,7 @@ public class WaterfallLayout: UICollectionViewLayout {
         position += footerInset.top
 
         if footerHeight > 0.0 {
-            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionElementKindSectionFooter, with: [section, 0])
+            let attributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, with: [section, 0])
             attributes.frame = CGRect(x: footerInset.left, y: position, width: collectionView.bounds.width - (footerInset.left + footerInset.right), height: footerHeight)
             footersAttribute[section] = attributes
             allItemAttributes.append(attributes)
