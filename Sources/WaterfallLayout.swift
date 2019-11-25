@@ -108,8 +108,8 @@ public class WaterfallLayout: UICollectionViewLayout {
 
     public weak var delegate: WaterfallLayoutDelegate?
     
-    // If the Item size is zero, then interItemSpacing should not apply
-    public var shouldApplyIndexWiseInterItemSpacing: Bool = false
+    // If the Item size is zero, then InteritemSpacing should not apply
+    public var ignoreInteritemSpacingForItemWithZeroHeight: Bool = false
     
     public override func prepare() {
         super.prepare()
@@ -294,7 +294,7 @@ public class WaterfallLayout: UICollectionViewLayout {
             )
             itemAttributes.append(attributes)
 
-            if shouldApplyIndexWiseInterItemSpacing, itemSize.height <= 0 {
+            if ignoreInteritemSpacingForItemWithZeroHeight, itemSize.height <= 0 {
                 minimumInteritemSpacing = 0.0
             }
 
